@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>真值表生成器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5dc; /* 米色背景 */
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        input[type="text"] {
+            padding: 8px;
+            font-size: 16px;
+            width: 100%; /* 占据整个宽度 */
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        input[type="text"]:focus {
+            border-color: #555;
+        }
+
+        .table-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start; /* 左对齐 */
+        }
+
+        .table-container table {
+            margin-right: 20px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .table-container table.loaded {
+            opacity: 1;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #ddd;
+        }
+
+    </style>
+</head>
+<body>
+<h2>简易真值表生成器</h2>
+<br><strong>真值表生成器🥳</strong><br><br>考虑到输入问题，请使用<strong>!</strong>作为<strong>¬</strong>，<strong>&</strong>作为<strong>⋀</strong>，<strong>|</strong>作为<strong>⋁</strong>，<strong>→</strong>和<strong>⇔</strong>可正常处理。</p>
+<p>示例输入：!a&(b|a)⇔c→b</p>
+<label for="expression">输入你的逻辑表达式🥰</label><br>
+<input type="text" id="expression" name="expression"><br>
+<div class="table-container">
+    <table id="truthTableLeft" class="left">
+        <thead id="headerRowLeft">
+        <!-- Header row will be dynamically populated -->
+        </thead>
+        <tbody id="tableBodyLeft">
+        <!-- Table body will be dynamically populated -->
+        </tbody>
+    </table>
+    <table id="truthTableRight">
+        <thead id="headerRowRight">
+        <!-- Header row will be dynamically populated -->
+        </thead>
+        <tbody id="tableBodyRight">
+        <!-- Table body will be dynamically populated -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function displayTruthTable(data, tableId) {
+        var truthTable = JSON.parse(data); // Parse JSON string to JavaScript object
+        var table = document.getElementById(tableId);
+
+        // Clear table
+        table.innerHTML = "";
+
+        // Create header row
+        var headerRow = document.createElement("tr");
+        var headerKeys = Object.keys(truthTable[0]);
+        headerKeys.forEach(function (key) {
+            var th = document.createElement("th");
+            th.textContent = replaceLogicSymbols(key);
+            headerRow.appendChild(th);
+        });
+        table.appendChild(headerRow);
+
+        // Create table body
+        var tableBody = document.createElement("tbody");
+        truthTable.forEach(function (row) {
+            var tr = document.createElement("tr");
+            headerKeys.forEach(function (key) {
+                var td = document.createElement("td");
+                td.textContent = row[key];
+                tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+        });
+        table.appendChild(tableBody);
+
+        // Add loaded class to table to trigger the fade-in effect
+        table.classList.add('loaded');
+    }
+
+    // Function to fetch truth table data
+    function fetchTruthTableData() {
+        const exprInput = encodeURIComponent(document.getElementById('expression').value);
+        if (!exprInput) {
+            clearTables();
+            return;
+        }
+        fetch('/api/data?exp=' + exprInput) // Use user input expression
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error("There was a problem with the fetch operation: " + response.statusText);
+                }
+                return response.json(); // Use response.json() to parse JSON data
+            })
+            .then(function (data) {
+                var tableId = data.length > 10 ? "truthTableRight" : "truthTableLeft"; // Choose table based on expression length
+                displayTruthTable(data, tableId);
+            })
+            .catch(function (error) {
+                console.error(error);
+            });
+    }
+
+    // Function to clear tables
+    function clearTables() {
+        document.getElementById("truthTableLeft").innerHTML = "";
+        document.getElementById("truthTableRight").innerHTML = "";
+    }
+    function replaceLogicSymbols(expression) {
+        return expression.replace(/!/g, '¬')
+            .replace(/&/g, '⋀')
+            .replace(/\|/g, '⋁');
+    }
+    // Event listener for input change
+    document.getElementById('expression').addEventListener('input', fetchTruthTableData);
+
+    // Initial fetch truth table data
+    fetchTruthTableData();
+</script>
+</body>
+</html>
